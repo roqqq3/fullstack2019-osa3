@@ -12,35 +12,18 @@ app.use(cors())
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1
-  },
-  {
-    name: "Niisku Mamma",
-    number: "031-4324123",
-    id: 2
-  },
-  {
-    name: "Mies Kristus",
-    number: "050-1236541",
-    id: 3
-  }
-]
-
-app.get('/info', (req, res) => {
-  let count = persons.length
-  res.send(`
-    Phonebook has info for ${count} people <br/>
-    ${new Date()}
-    `)
+app.get('/info', (req, res, next) => {
+  Person.find({})
+    .then(data => {
+      console.log(data)
+      let count = data.length
+      res.send(`
+      Phonebook has info for ${count} people <br/>
+      ${new Date()}
+      `)
+    })
+    .catch(error => next(error))
 })
-
-const generateId = () => {
-  return parseInt(Math.random() * Number.MAX_SAFE_INTEGER)
-}
 
 app.put('/api/persons/:id', (req, res, next) => {
   const body = req.body
@@ -59,17 +42,6 @@ app.put('/api/persons/:id', (req, res, next) => {
 
 app.post('/api/persons', (req, res, next) => {
   const body = req.body
-  if (!body.name) {
-    return res.status(400).json({
-      error: 'name missing'
-    })
-  } else if (!body.number) {
-    return res.status(400).json({
-      error: 'number missing'
-    })
-  } else if (persons.find(i => i.name === body.name)) {
-    //do nothing
-  }
   const person = new Person({
     name: body.name,
     number: body.number
@@ -88,7 +60,6 @@ app.delete('/api/persons/:id', (req, res, next) => {
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
-  console.log(typeof req.params.id)
   Person.findById(req.params.id)
     .then(person => {
       res.json(person.toJSON())
